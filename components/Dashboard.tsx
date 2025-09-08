@@ -3,6 +3,8 @@ import { Teacher, ComplianceRecord, ComplianceStatus } from '../types';
 import TeacherCard from './TeacherCard';
 import StatsCard from './StatsCard';
 import ComplianceHistory from './ComplianceHistory';
+import ComplianceTrendChart from './ComplianceTrendChart';
+import CourseDistributionChart from './CourseDistributionChart';
 import { UserPlusIcon, DocumentArrowDownIcon } from './Icons';
 
 interface DashboardProps {
@@ -17,6 +19,16 @@ interface DashboardProps {
   onGenerateTeacherCsv: (teacherId: string) => void; 
   onGenerateCsv: () => void; 
 }
+
+// Helper to get ISO week number for a date
+const getWeekNumber = (d: Date): number => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return weekNo;
+};
+
 
 const Dashboard: React.FC<DashboardProps> = ({
   teachers,
@@ -41,8 +53,63 @@ const Dashboard: React.FC<DashboardProps> = ({
     return { complianceRate, compliedCount, notCompliedCount };
   }, [records]);
 
+  const chartData = useMemo(() => {
+    // Trend Data (by week)
+    const weeklyData: { [week: number]: { complied: number; total: number } } = {};
+    records.forEach(record => {
+        const week = getWeekNumber(new Date(record.date));
+        if (!weeklyData[week]) {
+            weeklyData[week] = { complied: 0, total: 0 };
+        }
+        weeklyData[week].total++;
+        if (record.status === ComplianceStatus.COMPLIED) {
+            weeklyData[week].complied++;
+        }
+    });
+
+    const sortedWeeks = Object.keys(weeklyData).map(Number).sort((a, b) => a - b);
+    const trendLabels = sortedWeeks.map(week => `Semana ${week}`);
+    const trendValues = sortedWeeks.map(week => {
+        const { complied, total } = weeklyData[week];
+        return total > 0 ? Math.round((complied / total) * 100) : 0;
+    });
+
+    // Distribution Data (by course)
+    const courseData: { [course: string]: { complied: number; total: number } } = {};
+    courses.forEach(course => {
+      courseData[course] = { complied: 0, total: 0 };
+    });
+
+    records.forEach(record => {
+      if (courseData[record.course]) {
+        courseData[record.course].total++;
+        if (record.status === ComplianceStatus.COMPLIED) {
+          courseData[record.course].complied++;
+        }
+      }
+    });
+    
+    const distributionLabels = Object.keys(courseData);
+    const distributionValues = distributionLabels.map(course => {
+      const { complied, total } = courseData[course];
+      return total > 0 ? Math.round((complied / total) * 100) : 0;
+    });
+
+    return {
+      trend: { labels: trendLabels, data: trendValues },
+      distribution: { labels: distributionLabels, data: distributionValues }
+    };
+  }, [records, courses]);
+
+
   return (
     <div className="space-y-8">
+      {/* Charts Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ComplianceTrendChart data={chartData.trend.data} labels={chartData.trend.labels} />
+        <CourseDistributionChart data={chartData.distribution.data} labels={chartData.distribution.labels} />
+      </section>
+
       {/* Stats and Actions Section */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard title="Cumplimiento General" value={`${stats.complianceRate}%`} />
