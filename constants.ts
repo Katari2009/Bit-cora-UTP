@@ -1,0 +1,48 @@
+
+import { Teacher } from './types';
+
+export const COURSES: string[] = [
+  "NT1", "NT2", "PRIMERO", "SEGUNDO", "TERCERO", "CUARTO", 
+  "QUINTO", "SEXTO", "SÉPTIMO", "OCTAVO"
+];
+
+export const SUBJECTS: string[] = [
+  "LENGUAJE Y COMUNICACIÓN",
+  "MATEMÁTICA",
+  "CIENCIAS NATURALES",
+  "HISTORIA, GEOGRAFÍA Y CIENCIAS SOCIALES",
+  "INGLÉS",
+  "RELIGIÓN CATÓLICA",
+  "ORIENTACIÓN",
+  "TALLER EXPLORATORIO",
+  "PATRIMONIO EDUCATIVO",
+  "LENGUA Y LITERATURA",
+  "EDUCACIÓN FÍSICA Y SALUD",
+  "NÚCLEOS DE EDUCACIÓN PARVULARIA",
+  "TECNOLOGÍA",
+  "ARTES VISUALES",
+  "MÚSICA"
+];
+
+export const INITIAL_TEACHERS: Teacher[] = [
+  { id: "1", name: "KARINA ALEJANDRA CASTILLO GONZÁLEZ" },
+  { id: "2", name: "EDUARDO PATRICIO SABANDO OSSANDÓN" },
+  { id: "3", name: "PAOLA MATILDE GUAJARDO CORROTEA" },
+  { id: "4", name: "NATHALIE ANDREA MERY CERICHE" },
+  { id: "5", name: "YOSELYN PAULINA MONTAÑO BARRAZA" },
+  { id: "6", name: "MARÍA JOSÉ TORRES RIVERA" },
+  { id: "7", name: "ALICIA DEL CARMEN PASTÉN FLORES" },
+  { id: "8", name: "CONSTANZA FABIOLA MORALES RODRÍGUEZ" },
+  { id: "9", name: "PAULA LORENA TAPIA OSSANDÓN" },
+  { id: "10", name: "DANIELA FRANCISCA GAHONA FERNÁNDEZ" },
+  { id: "11", name: "VANESSA CAROLINA MARTÍNEZ AHUMADA" },
+  { id: "12", name: "MARCELA ALEJANDRA RAMÍREZ ROJAS" },
+  { id: "13", name: "CRISTIAN ALEXIS ALVEAR DONOSO" },
+  { id: "14", name: "ANDRÉS NAHUM CABEZAS ZALAZAR" },
+  { id: "15", name: "VÍCTOR MANUEL CERDA CERDA" },
+  { id: "16", name: "CARLA MABEL AZÓCAR GALLARDO" },
+  { id: "17", name: "CLAUDIO FELIPE ARAYA PÉREZ" },
+  { id: "18", name: "CINTHIA STEPHANIE ESPINOSA BARRIOS" },
+  { id: "19", name: "BESIS MAYBI GOMEZ CORDOVA" },
+  { id: "20", name: "YERKA MERCEDES JOFRÉ ARAYA" },
+];

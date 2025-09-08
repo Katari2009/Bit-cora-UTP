@@ -1,0 +1,5 @@
+{
+  "name": "Bitácora UTP",
+  "description": "Una aplicación para la Unidad Técnico Pedagógica (UTP) para el seguimiento diario del cumplimiento docente en el llenado de libros de clases. Incluye registro de estado, gestión de docentes y generación de informes.",
+  "requestFramePermissions": []
+}
