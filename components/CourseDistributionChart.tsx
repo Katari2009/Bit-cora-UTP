@@ -24,8 +24,6 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
         chartInstanceRef.current.destroy();
       }
 
-      const hasData = data.some(d => d > 0);
-
       chartInstanceRef.current = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -54,7 +52,7 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
               borderWidth: 1,
               padding: 10,
               callbacks: {
-                label: (context) => `${context.dataset.label}: ${context.raw}%`
+                label: (context: any) => `${context.dataset.label}: ${context.raw}%`
               }
             },
           },
@@ -64,7 +62,7 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
               max: 100,
               ticks: {
                 color: '#94a3b8',
-                callback: (value) => `${value}%`,
+                callback: (value: string | number) => `${value}%`,
               },
               grid: {
                 color: 'rgba(51, 65, 85, 0.5)',
