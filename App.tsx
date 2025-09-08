@@ -56,7 +56,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleLogCompliance = useCallback((teacherId: string, course: string, subject: string, status: ComplianceStatus) => {
+  const handleLogCompliance = useCallback((teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => {
     const teacher = teachers.find(t => t.id === teacherId);
     if (!teacher) return;
 
@@ -64,7 +64,7 @@ const App: React.FC = () => {
       id: new Date().toISOString() + Math.random(),
       teacherId,
       teacherName: teacher.name,
-      date: new Date().toISOString(), // Store full ISO string with time
+      date: new Date(dateTime).toISOString(), // Use provided dateTime
       course,
       subject,
       status,
@@ -205,17 +205,16 @@ const App: React.FC = () => {
     }
   }, [complianceRecords]);
 
-
-  const todayString = new Date().toISOString().split('T')[0];
-  const dailyComplianceLog = useMemo(() => {
+  const complianceLogByDay = useMemo(() => {
     const log = new Set<string>();
-    complianceRecords
-      .filter(r => r.date.startsWith(todayString)) // Check if record date starts with today's date string
-      .forEach(r => {
-          log.add(`${r.teacherId}-${r.course}-${r.subject}`);
-      });
+    complianceRecords.forEach(r => {
+        const recordDate = new Date(r.date);
+        // Using sv-SE locale gives YYYY-MM-DD format, which is stable and good for keys
+        const dateKey = recordDate.toLocaleDateString('sv-SE'); 
+        log.add(`${dateKey}-${r.teacherId}-${r.course}-${r.subject}`);
+    });
     return log;
-  }, [complianceRecords, todayString]);
+  }, [complianceRecords]);
 
   return (
     <div className="min-h-screen text-white p-4 sm:p-6 lg:p-8">
@@ -237,7 +236,7 @@ const App: React.FC = () => {
           records={complianceRecords}
           courses={COURSES}
           subjects={SUBJECTS}
-          dailyLog={dailyComplianceLog}
+          complianceLogByDay={complianceLogByDay}
           onAddTeacher={() => setAddTeacherModalOpen(true)}
           onDeleteTeacher={handleDeleteTeacher}
           onLogCompliance={handleLogCompliance}

@@ -12,10 +12,10 @@ interface DashboardProps {
   records: ComplianceRecord[];
   courses: string[];
   subjects: string[];
-  dailyLog: Set<string>;
+  complianceLogByDay: Set<string>;
   onAddTeacher: () => void;
   onDeleteTeacher: (teacherId: string) => void;
-  onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus) => void;
+  onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => void;
   onGenerateTeacherCsv: (teacherId: string) => void; 
   onGenerateCsv: () => void; 
 }
@@ -35,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   records,
   courses,
   subjects,
-  dailyLog,
+  complianceLogByDay,
   onAddTeacher,
   onDeleteTeacher,
   onLogCompliance,
@@ -150,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 teacher={teacher}
                 courses={courses}
                 subjects={subjects}
-                dailyLog={dailyLog}
+                complianceLogByDay={complianceLogByDay}
                 onDelete={onDeleteTeacher}
                 onLog={onLogCompliance}
                 onGenerateCsv={onGenerateTeacherCsv}
