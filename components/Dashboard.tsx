@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Teacher, ComplianceRecord, ComplianceStatus } from '../types';
 import TeacherCard from './TeacherCard';
 import StatsCard from './StatsCard';
 import ComplianceHistory from './ComplianceHistory';
 import ComplianceTrendChart from './ComplianceTrendChart';
 import CourseDistributionChart from './CourseDistributionChart';
-import { UserPlusIcon, DocumentArrowDownIcon } from './Icons';
+import { UserPlusIcon, DocumentArrowDownIcon, ArrowUpTrayIcon, ArrowDownTrayIcon } from './Icons';
 
 interface DashboardProps {
   teachers: Teacher[];
@@ -17,7 +17,9 @@ interface DashboardProps {
   onDeleteTeacher: (teacherId: string) => void;
   onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => void;
   onGenerateTeacherCsv: (teacherId: string) => void; 
-  onGenerateCsv: () => void; 
+  onGenerateCsv: () => void;
+  onExportData: () => void;
+  onImportData: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 // Helper to get ISO week number for a date
@@ -41,7 +43,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   onLogCompliance,
   onGenerateTeacherCsv,
   onGenerateCsv,
+  onExportData,
+  onImportData,
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const stats = useMemo(() => {
     const totalRecords = records.length;
     if (totalRecords === 0) {
@@ -120,7 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       <section className="bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-semibold text-slate-200">Panel de Docentes</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={onAddTeacher}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
@@ -128,6 +138,33 @@ const Dashboard: React.FC<DashboardProps> = ({
             <UserPlusIcon />
             Añadir Docente
           </button>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={onImportData}
+            accept=".json"
+            className="hidden"
+            aria-hidden="true"
+          />
+          <button
+            onClick={handleImportClick}
+            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+            title="Reemplaza todos los datos actuales con los de un archivo de respaldo"
+          >
+            <ArrowUpTrayIcon />
+            Importar Respaldo (.json)
+          </button>
+          
+          <button
+            onClick={onExportData}
+            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+            title="Guarda todos los docentes y registros en un archivo .json"
+          >
+            <ArrowDownTrayIcon />
+            Exportar Respaldo (.json)
+          </button>
+          
           <button
             onClick={onGenerateCsv}
             disabled={records.length === 0}

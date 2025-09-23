@@ -205,11 +205,73 @@ const App: React.FC = () => {
     }
   }, [complianceRecords]);
 
+  const handleExportData = useCallback(() => {
+    try {
+      const dataToExport = {
+        teachers: teachers,
+        complianceRecords: complianceRecords,
+        exportDate: new Date().toISOString(),
+      };
+
+      const jsonString = JSON.stringify(dataToExport, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const reportDate = new Date().toISOString().split('T')[0];
+      link.href = url;
+      link.download = `bitacora_utp_backup_${reportDate}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export data", error);
+      alert("Ocurrió un error al exportar los datos.");
+    }
+  }, [teachers, complianceRecords]);
+
+  const handleImportData = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') {
+          throw new Error("El archivo no se pudo leer correctamente.");
+        }
+        const importedData = JSON.parse(text);
+        
+        if (!importedData.teachers || !importedData.complianceRecords || !Array.isArray(importedData.teachers) || !Array.isArray(importedData.complianceRecords)) {
+          throw new Error("El archivo de respaldo no tiene el formato correcto.");
+        }
+        
+        if (window.confirm("¿Estás seguro de que quieres reemplazar todos los datos actuales con los del archivo? Esta acción no se puede deshacer.")) {
+          setTeachers(importedData.teachers);
+          setComplianceRecords(importedData.complianceRecords);
+          alert("Datos importados con éxito.");
+        }
+      } catch (error) {
+        console.error("Failed to import data", error);
+        alert(`Ocurrió un error al importar los datos: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.onerror = () => {
+      alert("Error al leer el archivo.");
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  }, []);
+
   const complianceLogByDay = useMemo(() => {
     const log = new Set<string>();
     complianceRecords.forEach(r => {
         const recordDate = new Date(r.date);
-        // Using sv-SE locale gives YYYY-MM-DD format, which is stable and good for keys
         const dateKey = recordDate.toLocaleDateString('sv-SE'); 
         log.add(`${dateKey}-${r.teacherId}-${r.course}-${r.subject}`);
     });
@@ -242,6 +304,8 @@ const App: React.FC = () => {
           onLogCompliance={handleLogCompliance}
           onGenerateTeacherCsv={generateTeacherCsvReport}
           onGenerateCsv={generateCsvReport}
+          onExportData={handleExportData}
+          onImportData={handleImportData}
         />
       </main>
 
