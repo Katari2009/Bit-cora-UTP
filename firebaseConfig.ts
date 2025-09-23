@@ -18,16 +18,25 @@ declare const firebase: any;
 let authInstance: any = null;
 let dbInstance: any = null;
 
-if (isFirebaseConfigured) {
+// This check ensures that Firebase is only initialized in a browser environment
+// where the Firebase scripts from index.html have loaded.
+// It prevents the build from crashing in a Node.js environment on Vercel.
+if (typeof window !== 'undefined' && typeof firebase !== 'undefined' && isFirebaseConfigured) {
   try {
-    const app = firebase.initializeApp(firebaseConfig);
-    authInstance = app.auth();
-    dbInstance = app.firestore();
+    // Prevent re-initializing the app, which can happen in React's development mode.
+    if (!firebase.apps.length) {
+      const app = firebase.initializeApp(firebaseConfig);
+      authInstance = app.auth();
+      dbInstance = app.firestore();
+    } else {
+      const app = firebase.app(); // Get the default app if it already exists
+      authInstance = app.auth();
+      dbInstance = app.firestore();
+    }
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    // Treat as not configured if initialization fails for other reasons
   }
-} else {
+} else if (!isFirebaseConfigured) {
     console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials. The app will be in a non-functional state.");
 }
 
