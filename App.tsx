@@ -29,24 +29,10 @@ const App: React.FC = () => {
 
     const initializeAuth = async () => {
       try {
-        // Set persistence to 'session'. This can be more compatible with restricted
-        // environments (like iframes) where localStorage might be disabled.
+        // Using 'session' persistence. The user will be signed out when the browser is closed.
         await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
-        // Check for redirect result first
-        await auth.getRedirectResult().catch((error: any) => {
-          console.error("Error from authentication redirect:", error);
-          let friendlyMessage = "Ocurrió un error durante la autenticación.";
-          if (error.code) {
-            friendlyMessage += ` (Código: ${error.code})`;
-          }
-          if (error.message) {
-            friendlyMessage += ` Detalles: ${error.message}`;
-          }
-          setAuthError(friendlyMessage);
-        });
-
-        // Then, set up the state change listener
+        // Set up the state change listener to handle user sign-in/sign-out
         unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
           if (firebaseUser) {
             const userData: User = {
@@ -128,14 +114,22 @@ const App: React.FC = () => {
   }, [user, seedInitialData]);
 
   const handleSignIn = async (): Promise<void> => {
-    if (!auth) return;
+    if (!auth) {
+      throw new Error("Firebase auth not initialized");
+    }
     setAuthError(null);
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
-      await auth.signInWithRedirect(provider);
+      // Use signInWithPopup as it is more compatible with different environments
+      await auth.signInWithPopup(provider);
     } catch (error: any) {
       console.error("Error initiating sign-in:", error);
+      // Don't show an error message if the user simply closes the popup.
+      if (error.code === 'auth/popup-closed-by-user') {
+          throw error; // still throw so UI can reset
+      }
       setAuthError(`No se pudo iniciar el proceso de autenticación. Error: ${error.message}`);
+      throw error;
     }
   };
 
