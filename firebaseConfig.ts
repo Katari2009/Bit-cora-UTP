@@ -1,6 +1,7 @@
-// IMPORTANT: Replace the placeholder values below with your own Firebase project's configuration.
-// You can find this in your Firebase project settings.
-// Go to Project settings > General tab > Your apps > Web app > Firebase SDK snippet > Config.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+
 const firebaseConfig = {
   apiKey: "AIzaSyDLydWJakov1ZhBD7Wpv1UGr8ypH96mbrE",
   authDomain: "bitacorautp.firebaseapp.com",
@@ -11,33 +12,24 @@ const firebaseConfig = {
   measurementId: "G-1TT63KXH5S"
 };
 
-// Check if the configuration is still the placeholder
 export const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.projectId !== "YOUR_PROJECT_ID";
 
-declare const firebase: any;
-let appInstance: any = null;
+let appInstance: firebase.app.App | null = null;
 
-// Helper to safely get the firebase global object only in the browser
-const getFirebaseGlobal = () => {
-  if (typeof window !== 'undefined' && typeof firebase !== 'undefined') {
-    return firebase;
-  }
-  return null;
-}
-
-const initializeFirebase = () => {
+const initializeFirebase = (): firebase.app.App | null => {
   if (appInstance) return appInstance;
 
-  const fb = getFirebaseGlobal();
-  if (fb && isFirebaseConfigured) {
+  if (isFirebaseConfigured) {
     try {
-      appInstance = fb.apps.length ? fb.app() : fb.initializeApp(firebaseConfig);
+      appInstance = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
       return appInstance;
     } catch (error) {
       console.error("Firebase initialization failed:", error);
       return null;
     }
-  } else if (!isFirebaseConfigured) {
+  } 
+  
+  if (!isFirebaseConfigured) {
     console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials.");
   }
   return null;
@@ -57,6 +49,10 @@ export const getFirestore = () => {
 
 // Getter for a new Google Auth Provider instance
 export const getGoogleAuthProvider = () => {
-  const fb = getFirebaseGlobal();
-  return fb ? new fb.auth.GoogleAuthProvider() : null;
-}
+  if (!isFirebaseConfigured) return null;
+  // Initialize to make sure firebase is available
+  initializeFirebase();
+  return new firebase.auth.GoogleAuthProvider();
+};
+
+export { firebase };

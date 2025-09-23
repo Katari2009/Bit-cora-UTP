@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-
-declare const Chart: any; // Use declare to inform TypeScript about the global Chart object
+import Chart from 'chart.js/auto';
 
 interface CourseDistributionChartProps {
   data: number[];
