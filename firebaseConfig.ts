@@ -17,37 +17,52 @@ export const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY" && 
 declare const firebase: any;
 let appInstance: any = null;
 
-const initializeFirebase = () => {
-  // Return the existing instance if it has already been created.
-  if (appInstance) {
-    return appInstance;
+// Helper to safely get the firebase global object only in the browser
+const getFirebaseGlobal = () => {
+  if (typeof window !== 'undefined' && typeof firebase !== 'undefined') {
+    return firebase;
   }
+  return null;
+}
 
-  // Check that we are in a browser environment and Firebase is available.
-  if (typeof window !== 'undefined' && typeof firebase !== 'undefined' && isFirebaseConfigured) {
+const initializeFirebase = () => {
+  if (appInstance) return appInstance;
+
+  const fb = getFirebaseGlobal();
+  if (fb && isFirebaseConfigured) {
     try {
-      // Use the existing app if already initialized, otherwise initialize a new one.
-      appInstance = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+      appInstance = fb.apps.length ? fb.app() : fb.initializeApp(firebaseConfig);
       return appInstance;
     } catch (error) {
       console.error("Firebase initialization failed:", error);
       return null;
     }
   } else if (!isFirebaseConfigured) {
-    console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials. The app will be in a non-functional state.");
+    console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials.");
   }
-  
   return null;
 };
 
-// Export a function to get the auth instance.
+// Getter for the Auth service
 export const getAuth = () => {
   const app = initializeFirebase();
   return app ? app.auth() : null;
 };
 
-// Export a function to get the Firestore instance.
+// Getter for the Firestore service
 export const getFirestore = () => {
   const app = initializeFirebase();
   return app ? app.firestore() : null;
 };
+
+// Getter for a new Google Auth Provider instance
+export const getGoogleAuthProvider = () => {
+  const fb = getFirebaseGlobal();
+  return fb ? new fb.auth.GoogleAuthProvider() : null;
+}
+
+// Getter for Auth Persistence types
+export const getAuthPersistence = () => {
+  const fb = getFirebaseGlobal();
+  return fb ? fb.auth.Auth.Persistence : null;
+}

@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, Teacher, ComplianceRecord, ComplianceStatus } from './types';
 import { INITIAL_TEACHERS, COURSES, SUBJECTS } from './constants';
-import { getAuth, getFirestore, isFirebaseConfigured } from './firebaseConfig';
+import {
+  getAuth,
+  getFirestore,
+  isFirebaseConfigured,
+  getGoogleAuthProvider,
+  getAuthPersistence
+} from './firebaseConfig';
 import Dashboard from './components/Dashboard';
 import AddTeacherModal from './components/AddTeacherModal';
 import Login from './components/Login';
 import Header from './components/Header';
 import LoadingSpinner from './components/LoadingSpinner';
 import FirebaseNotConfigured from './components/FirebaseNotConfigured';
-
-declare const firebase: any;
 
 const App: React.FC = () => {
   const auth = useMemo(() => getAuth(), []);
@@ -31,9 +35,16 @@ const App: React.FC = () => {
     let unsubscribe: (() => void) | undefined;
 
     const initializeAuth = async () => {
+      const persistence = getAuthPersistence();
+      if (!persistence) {
+        console.error("Could not get Firebase persistence object.");
+        setAuthError("No se pudo inicializar la sesión de autenticación.");
+        setLoading(false);
+        return;
+      }
       try {
         // Using 'session' persistence. The user will be signed out when the browser is closed.
-        await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+        await auth.setPersistence(persistence.SESSION);
 
         // Set up the state change listener to handle user sign-in/sign-out
         unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
@@ -121,7 +132,13 @@ const App: React.FC = () => {
       throw new Error("Firebase auth not initialized");
     }
     setAuthError(null);
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const provider = getGoogleAuthProvider();
+    if (!provider) {
+      const errorMsg = "No se pudo crear el proveedor de autenticación de Google.";
+      console.error(errorMsg);
+      setAuthError(errorMsg);
+      throw new Error(errorMsg);
+    }
     try {
       // Use signInWithPopup as it is more compatible with different environments
       await auth.signInWithPopup(provider);
