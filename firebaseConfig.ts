@@ -60,9 +60,3 @@ export const getGoogleAuthProvider = () => {
   const fb = getFirebaseGlobal();
   return fb ? new fb.auth.GoogleAuthProvider() : null;
 }
-
-// Getter for Auth Persistence types
-export const getAuthPersistence = () => {
-  const fb = getFirebaseGlobal();
-  return fb ? fb.auth.Auth.Persistence : null;
-}

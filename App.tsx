@@ -5,8 +5,7 @@ import {
   getAuth,
   getFirestore,
   isFirebaseConfigured,
-  getGoogleAuthProvider,
-  getAuthPersistence
+  getGoogleAuthProvider
 } from './firebaseConfig';
 import Dashboard from './components/Dashboard';
 import AddTeacherModal from './components/AddTeacherModal';
@@ -35,16 +34,10 @@ const App: React.FC = () => {
     let unsubscribe: (() => void) | undefined;
 
     const initializeAuth = async () => {
-      const persistence = getAuthPersistence();
-      if (!persistence) {
-        console.error("Could not get Firebase persistence object.");
-        setAuthError("No se pudo inicializar la sesión de autenticación.");
-        setLoading(false);
-        return;
-      }
       try {
         // Using 'session' persistence. The user will be signed out when the browser is closed.
-        await auth.setPersistence(persistence.SESSION);
+        // Hardcoding the string "session" removes the dependency on the global firebase object during build.
+        await auth.setPersistence("session");
 
         // Set up the state change listener to handle user sign-in/sign-out
         unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
