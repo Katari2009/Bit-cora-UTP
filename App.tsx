@@ -1,79 +1,203 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Teacher, ComplianceRecord, ComplianceStatus } from './types';
+import { User, Teacher, ComplianceRecord, ComplianceStatus } from './types';
 import { INITIAL_TEACHERS, COURSES, SUBJECTS } from './constants';
+import { auth, db, isFirebaseConfigured } from './firebaseConfig';
 import Dashboard from './components/Dashboard';
 import AddTeacherModal from './components/AddTeacherModal';
-import { AppLogoIcon } from './components/Logo';
+import Login from './components/Login';
+import Header from './components/Header';
+import LoadingSpinner from './components/LoadingSpinner';
+import FirebaseNotConfigured from './components/FirebaseNotConfigured';
+
+declare const firebase: any;
 
 const App: React.FC = () => {
-  const [teachers, setTeachers] = useState<Teacher[]>(() => {
-    try {
-      const storedTeachers = localStorage.getItem('utp_teachers');
-      return storedTeachers ? JSON.parse(storedTeachers) : INITIAL_TEACHERS;
-    } catch (error) {
-      console.error("Failed to parse teachers from localStorage", error);
-      return INITIAL_TEACHERS;
-    }
-  });
-
-  const [complianceRecords, setComplianceRecords] = useState<ComplianceRecord[]>(() => {
-    try {
-      const storedRecords = localStorage.getItem('utp_compliance_records');
-      return storedRecords ? JSON.parse(storedRecords) : [];
-    } catch (error) {
-      console.error("Failed to parse records from localStorage", error);
-      return [];
-    }
-  });
-
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(isFirebaseConfigured);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [complianceRecords, setComplianceRecords] = useState<ComplianceRecord[]>([]);
   const [isAddTeacherModalOpen, setAddTeacherModalOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('utp_teachers', JSON.stringify(teachers));
-  }, [teachers]);
+    if (!isFirebaseConfigured || !auth) {
+      setLoading(false);
+      return;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+
+    const initializeAuth = async () => {
+      try {
+        // Set persistence to 'session'. This can be more compatible with restricted
+        // environments (like iframes) where localStorage might be disabled.
+        await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+        // Check for redirect result first
+        await auth.getRedirectResult().catch((error: any) => {
+          console.error("Error from authentication redirect:", error);
+          let friendlyMessage = "Ocurrió un error durante la autenticación.";
+          if (error.code) {
+            friendlyMessage += ` (Código: ${error.code})`;
+          }
+          if (error.message) {
+            friendlyMessage += ` Detalles: ${error.message}`;
+          }
+          setAuthError(friendlyMessage);
+        });
+
+        // Then, set up the state change listener
+        unsubscribe = auth.onAuthStateChanged(async (firebaseUser: any) => {
+          if (firebaseUser) {
+            const userData: User = {
+              uid: firebaseUser.uid,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              email: firebaseUser.email,
+            };
+            setUser(userData);
+            setAuthError(null);
+          } else {
+            setUser(null);
+            setTeachers([]);
+            setComplianceRecords([]);
+            setLoading(false);
+          }
+        });
+      } catch (error: any) {
+        console.error("Authentication setup failed:", error);
+        setAuthError("No se pudo inicializar la sesión de autenticación.");
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Cleanup function
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const seedInitialData = useCallback(async (uid: string) => {
+      if (!db) return;
+      const teachersRef = db.collection('users').doc(uid).collection('teachers');
+      const batch = db.batch();
+      INITIAL_TEACHERS.forEach(teacher => {
+          const docRef = teachersRef.doc();
+          batch.set(docRef, { name: teacher.name });
+      });
+      await batch.commit();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('utp_compliance_records', JSON.stringify(complianceRecords));
-  }, [complianceRecords]);
+    if (!user || !db) return;
 
-  const handleAddTeacher = useCallback((name: string) => {
-    if (name.trim() === '') {
-        alert("El nombre del docente no puede estar vacío.");
-        return;
-    }
-    const newTeacher: Teacher = {
-      id: new Date().toISOString(),
-      name,
+    setLoading(true);
+    const teachersRef = db.collection('users').doc(user.uid).collection('teachers');
+    
+    teachersRef.limit(1).get().then(snapshot => {
+        if (snapshot.empty) {
+            seedInitialData(user.uid);
+        }
+    });
+
+    const unsubscribeTeachers = teachersRef.onSnapshot(snapshot => {
+      const teachersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Teacher[];
+      setTeachers(teachersData);
+      setLoading(false);
+    });
+
+    const unsubscribeRecords = db.collection('users').doc(user.uid).collection('records').onSnapshot(snapshot => {
+      const recordsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ComplianceRecord[];
+      setComplianceRecords(recordsData);
+    });
+
+    return () => {
+      unsubscribeTeachers();
+      unsubscribeRecords();
     };
-    setTeachers(prev => [...prev, newTeacher]);
-    setAddTeacherModalOpen(false);
-  }, []);
+  }, [user, seedInitialData]);
 
-  const handleDeleteTeacher = useCallback((teacherId: string) => {
-    if(window.confirm("¿Estás seguro de que quieres eliminar a este docente y todos sus registros? Esta acción no se puede deshacer.")) {
-        setTeachers(prev => prev.filter(t => t.id !== teacherId));
-        setComplianceRecords(prev => prev.filter(r => r.teacherId !== teacherId));
+  const handleSignIn = async (): Promise<void> => {
+    if (!auth) return;
+    setAuthError(null);
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await auth.signInWithRedirect(provider);
+    } catch (error: any) {
+      console.error("Error initiating sign-in:", error);
+      setAuthError(`No se pudo iniciar el proceso de autenticación. Error: ${error.message}`);
     }
-  }, []);
+  };
 
-  const handleLogCompliance = useCallback((teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => {
+  const handleSignOut = async () => {
+    if (!auth) return;
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Error during sign-out:", error);
+    }
+  };
+
+  const handleAddTeacher = useCallback(async (name: string) => {
+    if (name.trim() === '' || !user || !db) return;
+    try {
+      await db.collection('users').doc(user.uid).collection('teachers').add({ name });
+      setAddTeacherModalOpen(false);
+    } catch (error) {
+      console.error("Error adding teacher:", error);
+    }
+  }, [user]);
+
+  const handleDeleteTeacher = useCallback(async (teacherId: string) => {
+    if (!user || !db || !window.confirm("¿Estás seguro de que quieres eliminar a este docente y todos sus registros? Esta acción no se puede deshacer.")) return;
+    
+    try {
+      const batch = db.batch();
+      const teacherRef = db.collection('users').doc(user.uid).collection('teachers').doc(teacherId);
+      
+      const recordsQuery = db.collection('users').doc(user.uid).collection('records').where('teacherId', '==', teacherId);
+      const recordsSnapshot = await recordsQuery.get();
+      recordsSnapshot.forEach(doc => batch.delete(doc.ref));
+      
+      batch.delete(teacherRef);
+      await batch.commit();
+
+    } catch (error) {
+      console.error("Error deleting teacher and records:", error);
+    }
+  }, [user]);
+
+  const handleLogCompliance = useCallback(async (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => {
+    if (!user || !db) return;
     const teacher = teachers.find(t => t.id === teacherId);
     if (!teacher) return;
 
-    const newRecord: ComplianceRecord = {
-      id: new Date().toISOString() + Math.random(),
+    const newRecord = {
       teacherId,
       teacherName: teacher.name,
-      date: new Date(dateTime).toISOString(), // Use provided dateTime
+      date: new Date(dateTime).toISOString(),
       course,
       subject,
       status,
     };
 
-    setComplianceRecords(prev => [...prev, newRecord]);
-    
-  }, [teachers]);
-  
+    try {
+      await db.collection('users').doc(user.uid).collection('records').add(newRecord);
+    } catch (error) {
+      console.error("Error logging compliance:", error);
+    }
+  }, [user, teachers]);
+
   const generateTeacherCsvReport = useCallback((teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId);
     if (!teacher) {
@@ -87,30 +211,24 @@ const App: React.FC = () => {
         alert(`No hay registros para el docente ${teacher.name}.`);
         return;
     }
-
     const escapeCsvCell = (cellData: any): string => {
         let cell = String(cellData ?? '');
         cell = cell.replace(/"/g, '""');
         return `"${cell}"`;
     };
-
     const sortedRecords = [...recordsToReport].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
     const generationDate = new Date();
     const firstRecordDate = new Date(sortedRecords[0].date);
     const lastRecordDate = new Date(sortedRecords[sortedRecords.length - 1].date);
-    
     const metadata = [
       ['Informe de Cumplimiento Individual'],
       ['Docente:', teacher.name],
       ['Generado el:', generationDate.toLocaleString('es-CL')],
-      ['Período del Informe:', `${firstRecordDate.toLocaleDateString('es-CL')} - ${lastRecordDate.toLocaleDateString('es-CL')}`],
+      ['Período del Informe:', `${firstRecordDate.toLocaleDateString("es-CL")} - ${lastRecordDate.toLocaleDateString('es-CL')}`],
       ['Total de Registros:', sortedRecords.length],
       []
     ].map(row => row.join(',')).join('\n');
-
     const headers = ['ID de Registro', 'Fecha', 'Hora', 'Curso', 'Asignatura', 'Estado'];
-
     const dataRows = sortedRecords.map(r => {
         const recordDate = new Date(r.date);
         return [
@@ -122,13 +240,7 @@ const App: React.FC = () => {
             escapeCsvCell(r.status)
         ].join(',');
     });
-
-    const csvContent = [
-        metadata,
-        headers.join(','),
-        ...dataRows
-    ].join('\n');
-
+    const csvContent = [ metadata, headers.join(','), ...dataRows ].join('\n');
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
@@ -146,51 +258,37 @@ const App: React.FC = () => {
 
 
   const generateCsvReport = useCallback(() => {
-    if (complianceRecords.length === 0) {
-      return; // The button is disabled, so this is a safeguard.
-    }
-
+    if (complianceRecords.length === 0) return;
     const escapeCsvCell = (cellData: any): string => {
         let cell = String(cellData ?? '');
-        cell = cell.replace(/"/g, '""'); // Escape double quotes
+        cell = cell.replace(/"/g, '""');
         return `"${cell}"`;
     };
-
     const sortedRecords = [...complianceRecords].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
     const generationDate = new Date();
     const firstRecordDate = new Date(sortedRecords[0].date);
     const lastRecordDate = new Date(sortedRecords[sortedRecords.length - 1].date);
-    
     const metadata = [
       ['Informe General de Cumplimiento'],
       ['Generado el:', generationDate.toLocaleString('es-CL')],
       ['Período del Informe:', `${firstRecordDate.toLocaleDateString('es-CL')} - ${lastRecordDate.toLocaleDateString('es-CL')}`],
       ['Total de Registros:', sortedRecords.length],
-      [] // Blank line for separation
+      []
     ].map(row => row.join(',')).join('\n');
-
     const headers = ['ID de Registro', 'Docente', 'Fecha', 'Hora', 'Curso', 'Asignatura', 'Estado'];
-
     const dataRows = sortedRecords.map(r => {
         const recordDate = new Date(r.date);
         return [
             escapeCsvCell(r.id),
             escapeCsvCell(r.teacherName),
-            escapeCsvCell(recordDate.toLocaleDateString('sv-SE')), // YYYY-MM-DD format
-            escapeCsvCell(recordDate.toLocaleTimeString('es-CL')), // HH:MM:SS format
+            escapeCsvCell(recordDate.toLocaleDateString('sv-SE')),
+            escapeCsvCell(recordDate.toLocaleTimeString('es-CL')),
             escapeCsvCell(r.course),
             escapeCsvCell(r.subject),
             escapeCsvCell(r.status)
         ].join(',');
     });
-
-    const csvContent = [
-        metadata,
-        headers.join(','),
-        ...dataRows
-    ].join('\n');
-
+    const csvContent = [ metadata, headers.join(','), ...dataRows ].join('\n');
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
@@ -205,93 +303,31 @@ const App: React.FC = () => {
     }
   }, [complianceRecords]);
 
-  const handleExportData = useCallback(() => {
-    try {
-      const dataToExport = {
-        teachers: teachers,
-        complianceRecords: complianceRecords,
-        exportDate: new Date().toISOString(),
-      };
-
-      const jsonString = JSON.stringify(dataToExport, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const reportDate = new Date().toISOString().split('T')[0];
-      link.href = url;
-      link.download = `bitacora_utp_backup_${reportDate}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to export data", error);
-      alert("Ocurrió un error al exportar los datos.");
-    }
-  }, [teachers, complianceRecords]);
-
-  const handleImportData = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result;
-        if (typeof text !== 'string') {
-          throw new Error("El archivo no se pudo leer correctamente.");
-        }
-        const importedData = JSON.parse(text);
-        
-        if (!importedData.teachers || !importedData.complianceRecords || !Array.isArray(importedData.teachers) || !Array.isArray(importedData.complianceRecords)) {
-          throw new Error("El archivo de respaldo no tiene el formato correcto.");
-        }
-        
-        if (window.confirm("¿Estás seguro de que quieres reemplazar todos los datos actuales con los del archivo? Esta acción no se puede deshacer.")) {
-          setTeachers(importedData.teachers);
-          setComplianceRecords(importedData.complianceRecords);
-          alert("Datos importados con éxito.");
-        }
-      } catch (error) {
-        console.error("Failed to import data", error);
-        alert(`Ocurrió un error al importar los datos: ${error instanceof Error ? error.message : String(error)}`);
-      } finally {
-        event.target.value = '';
-      }
-    };
-    reader.onerror = () => {
-      alert("Error al leer el archivo.");
-      event.target.value = '';
-    };
-    reader.readAsText(file);
-  }, []);
-
   const complianceLogByDay = useMemo(() => {
     const log = new Set<string>();
     complianceRecords.forEach(r => {
         const recordDate = new Date(r.date);
-        const dateKey = recordDate.toLocaleDateString('sv-SE'); 
+        const dateKey = recordDate.toLocaleDateString('sv-SE');
         log.add(`${dateKey}-${r.teacherId}-${r.course}-${r.subject}`);
     });
     return log;
   }, [complianceRecords]);
 
+  if (!isFirebaseConfigured) {
+    return <FirebaseNotConfigured />;
+  }
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!user) {
+    return <Login onSignIn={handleSignIn} authError={authError} />;
+  }
+
   return (
     <div className="min-h-screen text-white p-4 sm:p-6 lg:p-8">
-      <header className="text-center mb-8">
-        <div className="flex flex-col items-center justify-center gap-4">
-            <AppLogoIcon className="w-16 h-16" />
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">
-              Bitácora UTP
-            </h1>
-        </div>
-        <p className="text-slate-400 mt-4 text-lg">
-          Seguimiento y Gestión de Libros de Clases.
-        </p>
-      </header>
-
+      <Header user={user} onSignOut={handleSignOut} />
       <main>
         <Dashboard
           teachers={teachers}
@@ -304,8 +340,6 @@ const App: React.FC = () => {
           onLogCompliance={handleLogCompliance}
           onGenerateTeacherCsv={generateTeacherCsvReport}
           onGenerateCsv={generateCsvReport}
-          onExportData={handleExportData}
-          onImportData={handleImportData}
         />
       </main>
 
