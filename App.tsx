@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User, Teacher, ComplianceRecord, ComplianceStatus } from './types';
 import { INITIAL_TEACHERS, COURSES, SUBJECTS } from './constants';
-import { auth, db, isFirebaseConfigured } from './firebaseConfig';
+import { getAuth, getFirestore, isFirebaseConfigured } from './firebaseConfig';
 import Dashboard from './components/Dashboard';
 import AddTeacherModal from './components/AddTeacherModal';
 import Login from './components/Login';
@@ -12,6 +12,9 @@ import FirebaseNotConfigured from './components/FirebaseNotConfigured';
 declare const firebase: any;
 
 const App: React.FC = () => {
+  const auth = useMemo(() => getAuth(), []);
+  const db = useMemo(() => getFirestore(), []);
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -65,7 +68,7 @@ const App: React.FC = () => {
         unsubscribe();
       }
     };
-  }, []);
+  }, [auth]);
 
   const seedInitialData = useCallback(async (uid: string) => {
       if (!db) return;
@@ -76,7 +79,7 @@ const App: React.FC = () => {
           batch.set(docRef, { name: teacher.name });
       });
       await batch.commit();
-  }, []);
+  }, [db]);
 
   useEffect(() => {
     if (!user || !db) return;
@@ -111,7 +114,7 @@ const App: React.FC = () => {
       unsubscribeTeachers();
       unsubscribeRecords();
     };
-  }, [user, seedInitialData]);
+  }, [user, db, seedInitialData]);
 
   const handleSignIn = async (): Promise<void> => {
     if (!auth) {
@@ -150,7 +153,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error adding teacher:", error);
     }
-  }, [user]);
+  }, [user, db]);
 
   const handleDeleteTeacher = useCallback(async (teacherId: string) => {
     if (!user || !db || !window.confirm("¿Estás seguro de que quieres eliminar a este docente y todos sus registros? Esta acción no se puede deshacer.")) return;
@@ -169,7 +172,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error deleting teacher and records:", error);
     }
-  }, [user]);
+  }, [user, db]);
 
   const handleLogCompliance = useCallback(async (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => {
     if (!user || !db) return;
@@ -190,7 +193,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error logging compliance:", error);
     }
-  }, [user, teachers]);
+  }, [user, db, teachers]);
 
   const generateTeacherCsvReport = useCallback((teacherId: string) => {
     const teacher = teachers.find(t => t.id === teacherId);

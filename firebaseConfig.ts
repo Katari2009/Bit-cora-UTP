@@ -15,30 +15,39 @@ const firebaseConfig = {
 export const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.projectId !== "YOUR_PROJECT_ID";
 
 declare const firebase: any;
-let authInstance: any = null;
-let dbInstance: any = null;
+let appInstance: any = null;
 
-// This check ensures that Firebase is only initialized in a browser environment
-// where the Firebase scripts from index.html have loaded.
-// It prevents the build from crashing in a Node.js environment on Vercel.
-if (typeof window !== 'undefined' && typeof firebase !== 'undefined' && isFirebaseConfigured) {
-  try {
-    // Prevent re-initializing the app, which can happen in React's development mode.
-    if (!firebase.apps.length) {
-      const app = firebase.initializeApp(firebaseConfig);
-      authInstance = app.auth();
-      dbInstance = app.firestore();
-    } else {
-      const app = firebase.app(); // Get the default app if it already exists
-      authInstance = app.auth();
-      dbInstance = app.firestore();
-    }
-  } catch (error) {
-    console.error("Firebase initialization failed:", error);
+const initializeFirebase = () => {
+  // Return the existing instance if it has already been created.
+  if (appInstance) {
+    return appInstance;
   }
-} else if (!isFirebaseConfigured) {
-    console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials. The app will be in a non-functional state.");
-}
 
-export const auth = authInstance;
-export const db = dbInstance;
+  // Check that we are in a browser environment and Firebase is available.
+  if (typeof window !== 'undefined' && typeof firebase !== 'undefined' && isFirebaseConfigured) {
+    try {
+      // Use the existing app if already initialized, otherwise initialize a new one.
+      appInstance = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+      return appInstance;
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      return null;
+    }
+  } else if (!isFirebaseConfigured) {
+    console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials. The app will be in a non-functional state.");
+  }
+  
+  return null;
+};
+
+// Export a function to get the auth instance.
+export const getAuth = () => {
+  const app = initializeFirebase();
+  return app ? app.auth() : null;
+};
+
+// Export a function to get the Firestore instance.
+export const getFirestore = () => {
+  const app = initializeFirebase();
+  return app ? app.firestore() : null;
+};
