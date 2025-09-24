@@ -16,8 +16,7 @@ interface DashboardProps {
   onAddTeacher: () => void;
   onDeleteTeacher: (teacherId: string) => void;
   onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => void;
-  onGenerateTeacherCsv: (teacherId: string) => void; 
-  onGenerateCsv: () => void;
+  onGenerateTeacherCsv: (teacherId: string) => void;
   onExportJson: () => void;
   onExportXlsx: () => void;
   onImportJson: (fileContent: string) => void;
@@ -43,7 +42,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   onDeleteTeacher,
   onLogCompliance,
   onGenerateTeacherCsv,
-  onGenerateCsv,
   onExportJson,
   onExportXlsx,
   onImportJson
@@ -191,15 +189,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             >
               <TableCellsIcon />
               Informe (XLSX)
-            </button>
-            <button
-              onClick={onGenerateCsv}
-              disabled={records.length === 0}
-              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
-              title={records.length === 0 ? "No hay registros para exportar" : "Exportar informe de registros a CSV"}
-            >
-              <DocumentArrowDownIcon />
-              Informe (CSV)
             </button>
           </div>
         </div>

@@ -263,53 +263,6 @@ const App: React.FC = () => {
       document.body.removeChild(link);
     }
   }, [complianceRecords, teachers]);
-
-
-  const generateCsvReport = useCallback(() => {
-    if (complianceRecords.length === 0) return;
-    const escapeCsvCell = (cellData: any): string => {
-        let cell = String(cellData ?? '');
-        cell = cell.replace(/"/g, '""');
-        return `"${cell}"`;
-    };
-    const sortedRecords = [...complianceRecords].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const generationDate = new Date();
-    const firstRecordDate = new Date(sortedRecords[0].date);
-    const lastRecordDate = new Date(sortedRecords[sortedRecords.length - 1].date);
-    const metadata = [
-      ['Informe General de Cumplimiento'],
-      ['Generado el:', generationDate.toLocaleString('es-CL')],
-      ['Período del Informe:', `${firstRecordDate.toLocaleDateString('es-CL')} - ${lastRecordDate.toLocaleDateString('es-CL')}`],
-      ['Total de Registros:', sortedRecords.length],
-      []
-    ].map(row => row.join(',')).join('\n');
-    const headers = ['ID de Registro', 'Docente', 'Fecha', 'Hora', 'Curso', 'Asignatura', 'Estado'];
-    const dataRows = sortedRecords.map(r => {
-        const recordDate = new Date(r.date);
-        return [
-            escapeCsvCell(r.id),
-            escapeCsvCell(r.teacherName),
-            escapeCsvCell(recordDate.toLocaleDateString('sv-SE')),
-            escapeCsvCell(recordDate.toLocaleTimeString('es-CL')),
-            escapeCsvCell(r.course),
-            escapeCsvCell(r.subject),
-            escapeCsvCell(r.status)
-        ].join(',');
-    });
-    const csvContent = [ metadata, headers.join(','), ...dataRows ].join('\n');
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      const reportDate = new Date().toISOString().split('T')[0];
-      link.setAttribute("href", url);
-      link.setAttribute("download", `informe_general_cumplimiento_${reportDate}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }, [complianceRecords]);
   
   const handleExportJson = useCallback(() => {
     if (teachers.length === 0 && complianceRecords.length === 0) {
@@ -478,7 +431,6 @@ const App: React.FC = () => {
           onDeleteTeacher={handleDeleteTeacher}
           onLogCompliance={handleLogCompliance}
           onGenerateTeacherCsv={generateTeacherCsvReport}
-          onGenerateCsv={generateCsvReport}
           onExportJson={handleExportJson}
           onExportXlsx={handleExportXlsx}
           onImportJson={handleImportJson}
