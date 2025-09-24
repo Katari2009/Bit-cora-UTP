@@ -20,6 +20,25 @@ export const DocumentArrowDownIcon: React.FC = () => (
   </svg>
 );
 
+export const TableCellsIcon: React.FC = () => (
+  <svg {...iconProps} xmlns="http://www.w3.org/2000/svg">
+    <path d="M11.25 3.25H4.75a1.5 1.5 0 0 0-1.5 1.5v10.5a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V9.75" />
+    <path fillRule="evenodd" d="M8 3.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0V4h-6.5a.5.5 0 0 1-.5-.5Z" clipRule="evenodd" />
+    <path fillRule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0V8.5H4.5A.5.5 0 0 1 4 8Z" clipRule="evenodd" />
+    <path d="M4.5 12.5h3v3.5h-3v-3.5Z" />
+    <path fillRule="evenodd" d="M8.5 8.5h3v3h-3v-3Z" clipRule="evenodd" />
+    <path d="M8.5 12.5h3v3.5h-3v-3.5Z" />
+    <path d="M12.5 9.5h3v3h-3v-3Z" />
+  </svg>
+);
+
+export const ArrowUpTrayIcon: React.FC = () => (
+  <svg {...iconProps} xmlns="http://www.w3.org/2000/svg">
+    <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1-1.06 1.06L10 8.06v8.69a.75.75 0 0 1-1.5 0V8.06L7.03 9.53a.75.75 0 0 1-1.06-1.06l2.25-2.25Z" clipRule="evenodd" />
+    <path fillRule="evenodd" d="M1.75 14.25a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 0 1.5h-1.5Zm3 0a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 0 1.5h-1.5Zm3.75 0a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 0 1.5h-1.5Zm3.75 0a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 0 1.5h-1.5Z" clipRule="evenodd" />
+  </svg>
+);
+
 
 export const TrashIcon: React.FC = () => (
   <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" >

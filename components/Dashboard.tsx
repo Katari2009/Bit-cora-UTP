@@ -1,12 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Teacher, ComplianceRecord, ComplianceStatus } from '../types';
 import TeacherCard from './TeacherCard';
 import StatsCard from './StatsCard';
 import ComplianceHistory from './ComplianceHistory';
 import ComplianceTrendChart from './ComplianceTrendChart';
 import CourseDistributionChart from './CourseDistributionChart';
-import { UserPlusIcon, DocumentArrowDownIcon } from './Icons';
+import { UserPlusIcon, DocumentArrowDownIcon, ArrowUpTrayIcon, TableCellsIcon } from './Icons';
 
 interface DashboardProps {
   teachers: Teacher[];
@@ -19,6 +19,8 @@ interface DashboardProps {
   onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => void;
   onGenerateTeacherCsv: (teacherId: string) => void; 
   onGenerateCsv: () => void;
+  onExportXlsx: () => void;
+  onImportJson: (fileContent: string) => void;
 }
 
 // Helper to get ISO week number for a date
@@ -42,7 +44,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   onLogCompliance,
   onGenerateTeacherCsv,
   onGenerateCsv,
+  onExportXlsx,
+  onImportJson
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const stats = useMemo(() => {
     const totalRecords = records.length;
     if (totalRecords === 0) {
@@ -102,6 +108,33 @@ const Dashboard: React.FC<DashboardProps> = ({
     };
   }, [records, courses]);
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      if (typeof text === 'string') {
+        onImportJson(text);
+      }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    reader.onerror = () => {
+      console.error("Failed to read file");
+      alert("No se pudo leer el archivo de respaldo.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <div className="space-y-8">
@@ -122,6 +155,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       <section className="bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-semibold text-slate-200">Panel de Docentes</h2>
         <div className="flex flex-wrap items-center justify-center gap-4">
+          <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" />
+          <button
+            onClick={handleImportClick}
+            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+            title="Importar un respaldo reemplazará todos los datos actuales"
+          >
+            <ArrowUpTrayIcon />
+            Importar Respaldo (JSON)
+          </button>
           <button
             onClick={onAddTeacher}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
@@ -130,15 +172,26 @@ const Dashboard: React.FC<DashboardProps> = ({
             Añadir Docente
           </button>
           
-          <button
-            onClick={onGenerateCsv}
-            disabled={records.length === 0}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
-            title={records.length === 0 ? "No hay registros para exportar" : "Exportar todos los registros a CSV"}
-          >
-            <DocumentArrowDownIcon />
-            Exportar Informe (CSV)
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={onExportXlsx}
+              disabled={teachers.length === 0 && records.length === 0}
+              className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
+              title={records.length === 0 ? "No hay datos para exportar" : "Exportar todos los datos a XLSX"}
+            >
+              <TableCellsIcon />
+              Exportar (XLSX)
+            </button>
+            <button
+              onClick={onGenerateCsv}
+              disabled={records.length === 0}
+              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
+              title={records.length === 0 ? "No hay registros para exportar" : "Exportar todos los registros a CSV"}
+            >
+              <DocumentArrowDownIcon />
+              Exportar (CSV)
+            </button>
+          </div>
         </div>
       </section>
       
@@ -162,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         ) : (
           <div className="text-center py-16 bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl">
             <p className="text-slate-400 text-xl">No hay docentes registrados.</p>
-            <p className="text-slate-500 mt-2">Haga clic en "Añadir Docente" para comenzar.</p>
+            <p className="text-slate-500 mt-2">Haga clic en "Añadir Docente" o "Importar Respaldo" para comenzar.</p>
           </div>
         )}
       </section>

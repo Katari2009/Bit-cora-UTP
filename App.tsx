@@ -14,6 +14,7 @@ import Login from './components/Login';
 import Header from './components/Header';
 import LoadingSpinner from './components/LoadingSpinner';
 import FirebaseNotConfigured from './components/FirebaseNotConfigured';
+import * as XLSX from 'xlsx';
 
 const App: React.FC = () => {
   const auth = useMemo(() => getAuth(), []);
@@ -104,7 +105,7 @@ const App: React.FC = () => {
       })) as Teacher[];
       setTeachers(teachersData);
       setLoading(false);
-    });
+    }, () => setLoading(false));
 
     const unsubscribeRecords = db.collection('users').doc(user.uid).collection('records').onSnapshot(snapshot => {
       const recordsData = snapshot.docs.map(doc => ({
@@ -310,6 +311,103 @@ const App: React.FC = () => {
     }
   }, [complianceRecords]);
 
+  const handleExportXlsx = useCallback(() => {
+    if (teachers.length === 0 && complianceRecords.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+    }
+
+    const teachersToExport = teachers.map(({ id, name }) => ({ ID_Docente: id, Nombre: name }));
+    const recordsToExport = complianceRecords.map(r => ({
+      ID_Registro: r.id,
+      ID_Docente: r.teacherId,
+      Nombre_Docente: r.teacherName,
+      Fecha: new Date(r.date).toLocaleDateString('sv-SE'),
+      Hora: new Date(r.date).toLocaleTimeString('es-CL'),
+      Curso: r.course,
+      Asignatura: r.subject,
+      Estado: r.status
+    }));
+
+    const teacherSheet = XLSX.utils.json_to_sheet(teachersToExport);
+    const recordSheet = XLSX.utils.json_to_sheet(recordsToExport);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, teacherSheet, "Docentes");
+    XLSX.utils.book_append_sheet(workbook, recordSheet, "Registros");
+
+    const reportDate = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Informe_Bitacora_UTP_${reportDate}.xlsx`);
+  }, [teachers, complianceRecords]);
+
+  const handleImportJson = useCallback(async (fileContent: string) => {
+    if (!user || !db) return;
+
+    let data;
+    try {
+        data = JSON.parse(fileContent);
+        if (!Array.isArray(data.teachers) || !Array.isArray(data.records)) {
+            throw new Error("El archivo JSON debe contener un array 'teachers' y un array 'records'.");
+        }
+    } catch (error) {
+        console.error("Error parsing JSON:", error);
+        alert(`El archivo de respaldo es inválido o está corrupto. Error: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+    }
+
+    const confirmation = window.confirm(
+      "ADVERTENCIA: Importar este respaldo reemplazará TODOS los datos actuales (docentes y registros). Esta acción no se puede deshacer. ¿Desea continuar?"
+    );
+
+    if (!confirmation) return;
+    
+    setLoading(true);
+
+    try {
+        const deleteBatch = db.batch();
+        const existingTeachers = await db.collection('users').doc(user.uid).collection('teachers').get();
+        existingTeachers.forEach(doc => deleteBatch.delete(doc.ref));
+        
+        const existingRecords = await db.collection('users').doc(user.uid).collection('records').get();
+        existingRecords.forEach(doc => deleteBatch.delete(doc.ref));
+        
+        await deleteBatch.commit();
+
+        const importBatch = db.batch();
+        const oldIdToNewIdMap: { [key: string]: string } = {};
+        const teachersRef = db.collection('users').doc(user.uid).collection('teachers');
+        
+        data.teachers.forEach((teacher: Teacher) => {
+            const newTeacherRef = teachersRef.doc();
+            oldIdToNewIdMap[teacher.id] = newTeacherRef.id;
+            importBatch.set(newTeacherRef, { name: teacher.name });
+        });
+
+        const recordsRef = db.collection('users').doc(user.uid).collection('records');
+        data.records.forEach((record: ComplianceRecord) => {
+            const newTeacherId = oldIdToNewIdMap[record.teacherId];
+            if (newTeacherId) {
+                const newRecordRef = recordsRef.doc();
+                const { id, ...recordData } = record;
+                const newRecordData = {
+                    ...recordData,
+                    teacherId: newTeacherId,
+                };
+                importBatch.set(newRecordRef, newRecordData);
+            }
+        });
+
+        await importBatch.commit();
+        alert("Respaldo importado exitosamente.");
+
+    } catch (error) {
+        console.error("Error during import process:", error);
+        alert("Ocurrió un error durante la importación. Es posible que los datos estén en un estado inconsistente. Se recomienda recargar la página.");
+    } finally {
+        setLoading(false);
+    }
+  }, [user, db]);
+
   const complianceLogByDay = useMemo(() => {
     const log = new Set<string>();
     complianceRecords.forEach(r => {
@@ -347,6 +445,8 @@ const App: React.FC = () => {
           onLogCompliance={handleLogCompliance}
           onGenerateTeacherCsv={generateTeacherCsvReport}
           onGenerateCsv={generateCsvReport}
+          onExportXlsx={handleExportXlsx}
+          onImportJson={handleImportJson}
         />
       </main>
 
