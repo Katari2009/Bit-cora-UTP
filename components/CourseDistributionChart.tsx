@@ -65,7 +65,9 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
               },
               grid: {
                 color: 'rgba(51, 65, 85, 0.5)',
-                drawBorder: false,
+              },
+              border: {
+                display: false,
               },
             },
             x: {
