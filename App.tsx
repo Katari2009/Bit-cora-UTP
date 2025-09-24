@@ -290,32 +290,147 @@ const App: React.FC = () => {
   }, [teachers, complianceRecords]);
 
   const handleExportXlsx = useCallback(() => {
-    if (teachers.length === 0 && complianceRecords.length === 0) {
-        alert("No hay datos para exportar.");
-        return;
+    if (complianceRecords.length === 0) {
+      alert("No hay datos para exportar.");
+      return;
     }
 
-    const teachersToExport = teachers.map(({ id, name }) => ({ ID_Docente: id, Nombre: name }));
-    const recordsToExport = complianceRecords.map(r => ({
-      ID_Registro: r.id,
-      ID_Docente: r.teacherId,
-      Nombre_Docente: r.teacherName,
-      Fecha: new Date(r.date).toLocaleDateString('sv-SE'),
-      Hora: new Date(r.date).toLocaleTimeString('es-CL'),
-      Curso: r.course,
-      Asignatura: r.subject,
-      Estado: r.status
-    }));
+    const STATUS_COMPLIED = "Cumple con la planificación";
+    const STATUS_NOT_COMPLIED = "Incumplimiento detectado";
+    const statusMap = {
+      [ComplianceStatus.COMPLIED]: STATUS_COMPLIED,
+      [ComplianceStatus.NOT_COMPLIED]: STATUS_NOT_COMPLIED,
+    };
 
-    const teacherSheet = XLSX.utils.json_to_sheet(teachersToExport);
-    const recordSheet = XLSX.utils.json_to_sheet(recordsToExport);
+    // --- 1. Calculations for Summaries ---
+    const totalRecords = complianceRecords.length;
+    const compliedCount = complianceRecords.filter(r => r.status === ComplianceStatus.COMPLIED).length;
+    const complianceRate = totalRecords > 0 ? (compliedCount / totalRecords) : 0;
+    
+    const teacherRecordCounts = teachers.map(teacher => ({
+        name: teacher.name,
+        count: complianceRecords.filter(r => r.teacherId === teacher.id).length,
+    })).sort((a, b) => b.count - a.count);
 
+    const top3Teachers = teacherRecordCounts.slice(0, 3);
+    
+    // --- 2. Create "Resumen" Sheet ---
+    const summaryData = [
+      { Métrica: "Número total de registros", Valor: totalRecords },
+      { Métrica: "Porcentaje de cumplimiento general", Valor: `${(complianceRate * 100).toFixed(1)}%` },
+      { Métrica: "Total Docentes", Valor: teachers.length },
+      {},
+      { Métrica: "Top 3 Docentes con más registros" },
+      ...top3Teachers.map((t, i) => ({ Métrica: `${i + 1}. ${t.name}`, Valor: t.count })),
+    ];
+    const summarySheet = XLSX.utils.json_to_sheet(summaryData, { skipHeader: true });
+    summarySheet['!cols'] = [{ wch: 40 }, { wch: 20 }];
+
+
+    // --- 3. Create "Docentes" & "Registros" Sheets ---
+    const teachersSheet = XLSX.utils.json_to_sheet(teachers.map(t => ({ 'Id Docente': t.id, 'Nombre Completo': t.name })));
+    teachersSheet['!cols'] = [{ wch: 25 }, { wch: 40 }];
+    
+    const sortedRecords = [...complianceRecords].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const recordsSheet = XLSX.utils.json_to_sheet(sortedRecords.map(r => ({
+      'Id Registro': r.id,
+      'Nombre del Docente': r.teacherName,
+      'Fecha': new Date(r.date).toLocaleDateString('sv-SE'),
+      'Hora': new Date(r.date).toLocaleTimeString('es-CL'),
+      'Curso': r.course,
+      'Asignatura': r.subject,
+      'Estado': statusMap[r.status],
+    })));
+    recordsSheet['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 40 }, { wch: 25 }];
+
+    // --- 4. Create Pivot Data Sheets ---
+    // By Course
+    const courseCompliance = COURSES.map(course => {
+      const courseRecords = complianceRecords.filter(r => r.course === course);
+      const total = courseRecords.length;
+      if (total === 0) return null;
+      const complied = courseRecords.filter(r => r.status === ComplianceStatus.COMPLIED).length;
+      return {
+        'Curso': course,
+        'Cumplimiento (%)': total > 0 ? (complied / total * 100).toFixed(1) : 0,
+        [STATUS_COMPLIED]: complied,
+        [STATUS_NOT_COMPLIED]: total - complied,
+        'Total Registros': total,
+      };
+    }).filter(Boolean);
+    const courseSheet = XLSX.utils.json_to_sheet(courseCompliance);
+    courseSheet['!cols'] = [{ wch: 15 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
+
+    // By Subject
+    const subjectCompliance = SUBJECTS.map(subject => {
+      const subjectRecords = complianceRecords.filter(r => r.subject === subject);
+      const total = subjectRecords.length;
+      if (total === 0) return null;
+      const complied = subjectRecords.filter(r => r.status === ComplianceStatus.COMPLIED).length;
+      return {
+        'Asignatura': subject,
+        'Cumplimiento (%)': total > 0 ? (complied / total * 100).toFixed(1) : 0,
+        [STATUS_COMPLIED]: complied,
+        [STATUS_NOT_COMPLIED]: total - complied,
+        'Total Registros': total,
+      };
+    }).filter(Boolean);
+    const subjectSheet = XLSX.utils.json_to_sheet(subjectCompliance);
+    subjectSheet['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
+
+    // By Teacher
+    const teacherCompliance = teachers.map(teacher => {
+      const teacherRecords = complianceRecords.filter(r => r.teacherId === teacher.id);
+      const total = teacherRecords.length;
+      if (total === 0) return null;
+      const complied = teacherRecords.filter(r => r.status === ComplianceStatus.COMPLIED).length;
+      return {
+        'Docente': teacher.name,
+        'Cumplimiento (%)': total > 0 ? parseFloat((complied / total * 100).toFixed(1)) : 0,
+        [STATUS_COMPLIED]: complied,
+        [STATUS_NOT_COMPLIED]: total - complied,
+        'Total Registros': total,
+      };
+    }).filter(Boolean).sort((a, b) => b['Cumplimiento (%)'] - a['Cumplimiento (%)']);
+    const teacherSheet = XLSX.utils.json_to_sheet(teacherCompliance);
+    teacherSheet['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
+
+    // --- 5. Create Analysis Sheet ---
+    const analysisText = `
+Resumen de Hallazgos:
+El presente informe analiza un total de ${totalRecords} registros de cumplimiento docente, con una tasa de cumplimiento general del ${(complianceRate * 100).toFixed(1)}%. Este indicador central provee una visión panorámica de la adherencia a la planificación en la institución.
+
+Análisis por Docente:
+Se observa una variación en el desempeño individual. El personal docente con mayor tasa de cumplimiento demuestra una gestión consistente del libro de clases, mientras que aquellos con tasas más bajas podrían requerir apoyo o clarificación de procesos. Es crucial analizar las causas de los incumplimientos, que podrían variar desde la carga de trabajo hasta la necesidad de capacitación.
+
+Análisis por Curso y Asignatura:
+El desglose por curso y asignatura permite identificar patrones específicos. Ciertas áreas pueden presentar mayores desafíos, lo que podría indicar la necesidad de revisar la complejidad de la planificación, la disponibilidad de recursos o las metodologías de enseñanza aplicadas.
+
+Recomendaciones Sugeridas:
+1.  Focalizar el Apoyo: Brindar acompañamiento y mentoría a los docentes con las tasas de incumplimiento más altas para identificar barreras y desarrollar planes de mejora individualizados.
+2.  Revisión Curricular: Analizar los cursos y asignaturas con bajo cumplimiento para determinar si se requieren ajustes en la planificación o en la distribución de contenidos.
+3.  Reconocimiento y Buenas Prácticas: Reconocer a los docentes con alto desempeño y facilitar instancias para que compartan sus estrategias de organización y gestión con sus pares.
+4.  Diálogo Continuo: Establecer reuniones periódicas con los equipos de asignatura y de nivel para revisar estos datos, discutir los desafíos y tomar decisiones pedagógicas informadas que fortalezcan la gestión de la UTP.
+
+Este informe es una herramienta de diagnóstico que busca impulsar la mejora continua. Su valor reside en la interpretación colaborativa de los datos y en la implementación de acciones concretas y contextualizadas.
+    `.trim().replace(/^    /gm, '');
+    const analysisSheet = XLSX.utils.json_to_sheet([{ 'Análisis y Recomendaciones': analysisText }]);
+    analysisSheet['!cols'] = [{ wch: 120 }];
+
+
+    // --- 6. Assemble and Download Workbook ---
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, teacherSheet, "Docentes");
-    XLSX.utils.book_append_sheet(workbook, recordSheet, "Registros");
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen");
+    XLSX.utils.book_append_sheet(workbook, teacherSheet, "Cumplimiento por Docente");
+    XLSX.utils.book_append_sheet(workbook, courseSheet, "Cumplimiento por Curso");
+    XLSX.utils.book_append_sheet(workbook, subjectSheet, "Cumplimiento por Asignatura");
+    XLSX.utils.book_append_sheet(workbook, recordsSheet, "Registros");
+    XLSX.utils.book_append_sheet(workbook, teachersSheet, "Docentes");
+    XLSX.utils.book_append_sheet(workbook, analysisSheet, "Análisis y Recomendaciones");
 
     const reportDate = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Informe_Bitacora_UTP_${reportDate}.xlsx`);
+    XLSX.writeFile(workbook, `Informe_Profesional_Bitacora_UTP_${reportDate}.xlsx`);
+
   }, [teachers, complianceRecords]);
 
   const handleImportJson = useCallback(async (fileContent: string) => {
