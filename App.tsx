@@ -310,6 +310,31 @@ const App: React.FC = () => {
       document.body.removeChild(link);
     }
   }, [complianceRecords]);
+  
+  const handleExportJson = useCallback(() => {
+    if (teachers.length === 0 && complianceRecords.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+    }
+    const dataToExport = {
+      teachers: teachers,
+      complianceRecords: complianceRecords,
+      exportDate: new Date().toISOString(),
+    };
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      const reportDate = new Date().toISOString().split('T')[0];
+      link.setAttribute("href", url);
+      link.setAttribute("download", `bitacora_utp_backup_${reportDate}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [teachers, complianceRecords]);
 
   const handleExportXlsx = useCallback(() => {
     if (teachers.length === 0 && complianceRecords.length === 0) {
@@ -344,10 +369,19 @@ const App: React.FC = () => {
     if (!user || !db) return;
 
     let data;
+    let recordsToImport: ComplianceRecord[];
     try {
         data = JSON.parse(fileContent);
-        if (!Array.isArray(data.teachers) || !Array.isArray(data.records)) {
-            throw new Error("El archivo JSON debe contener un array 'teachers' y un array 'records'.");
+        if (!Array.isArray(data.teachers)) {
+            throw new Error("El archivo JSON debe contener un array 'teachers'.");
+        }
+
+        if (Array.isArray(data.complianceRecords)) {
+            recordsToImport = data.complianceRecords;
+        } else if (Array.isArray(data.records)) {
+            recordsToImport = data.records;
+        } else {
+            throw new Error("El archivo JSON debe contener un array llamado 'records' o 'complianceRecords'.");
         }
     } catch (error) {
         console.error("Error parsing JSON:", error);
@@ -384,7 +418,7 @@ const App: React.FC = () => {
         });
 
         const recordsRef = db.collection('users').doc(user.uid).collection('records');
-        data.records.forEach((record: ComplianceRecord) => {
+        recordsToImport.forEach((record: ComplianceRecord) => {
             const newTeacherId = oldIdToNewIdMap[record.teacherId];
             if (newTeacherId) {
                 const newRecordRef = recordsRef.doc();
@@ -445,6 +479,7 @@ const App: React.FC = () => {
           onLogCompliance={handleLogCompliance}
           onGenerateTeacherCsv={generateTeacherCsvReport}
           onGenerateCsv={generateCsvReport}
+          onExportJson={handleExportJson}
           onExportXlsx={handleExportXlsx}
           onImportJson={handleImportJson}
         />

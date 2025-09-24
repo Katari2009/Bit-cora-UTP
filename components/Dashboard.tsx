@@ -1,4 +1,3 @@
-
 import React, { useMemo, useRef } from 'react';
 import { Teacher, ComplianceRecord, ComplianceStatus } from '../types';
 import TeacherCard from './TeacherCard';
@@ -19,6 +18,7 @@ interface DashboardProps {
   onLogCompliance: (teacherId: string, course: string, subject: string, status: ComplianceStatus, dateTime: string) => void;
   onGenerateTeacherCsv: (teacherId: string) => void; 
   onGenerateCsv: () => void;
+  onExportJson: () => void;
   onExportXlsx: () => void;
   onImportJson: (fileContent: string) => void;
 }
@@ -44,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onLogCompliance,
   onGenerateTeacherCsv,
   onGenerateCsv,
+  onExportJson,
   onExportXlsx,
   onImportJson
 }) => {
@@ -159,10 +160,10 @@ const Dashboard: React.FC<DashboardProps> = ({
           <button
             onClick={handleImportClick}
             className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
-            title="Importar un respaldo reemplazará todos los datos actuales"
+            title="Importar un respaldo desde un archivo .json. Esto reemplazará todos los datos actuales."
           >
             <ArrowUpTrayIcon />
-            Importar Respaldo (JSON)
+            Importar Respaldo
           </button>
           <button
             onClick={onAddTeacher}
@@ -174,22 +175,31 @@ const Dashboard: React.FC<DashboardProps> = ({
           
           <div className="flex flex-col sm:flex-row gap-2">
             <button
+              onClick={onExportJson}
+              disabled={teachers.length === 0 && records.length === 0}
+              className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
+              title={records.length === 0 ? "No hay datos para exportar" : "Exportar un respaldo completo a un archivo .json"}
+            >
+              <DocumentArrowDownIcon />
+              Exportar Respaldo
+            </button>
+            <button
               onClick={onExportXlsx}
               disabled={teachers.length === 0 && records.length === 0}
               className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
-              title={records.length === 0 ? "No hay datos para exportar" : "Exportar todos los datos a XLSX"}
+              title={records.length === 0 ? "No hay datos para exportar" : "Exportar informe completo a XLSX"}
             >
               <TableCellsIcon />
-              Exportar (XLSX)
+              Informe (XLSX)
             </button>
             <button
               onClick={onGenerateCsv}
               disabled={records.length === 0}
               className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
-              title={records.length === 0 ? "No hay registros para exportar" : "Exportar todos los registros a CSV"}
+              title={records.length === 0 ? "No hay registros para exportar" : "Exportar informe de registros a CSV"}
             >
               <DocumentArrowDownIcon />
-              Exportar (CSV)
+              Informe (CSV)
             </button>
           </div>
         </div>
