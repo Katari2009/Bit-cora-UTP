@@ -357,8 +357,8 @@ const App: React.FC = () => {
         [STATUS_NOT_COMPLIED]: total - complied,
         'Total Registros': total,
       };
-    }).filter(Boolean);
-    const courseSheet = XLSX.utils.json_to_sheet(courseCompliance);
+    }).filter(item => item !== null);
+    const courseSheet = XLSX.utils.json_to_sheet(courseCompliance as any[]);
     courseSheet['!cols'] = [{ wch: 15 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
 
     // By Subject
@@ -374,8 +374,8 @@ const App: React.FC = () => {
         [STATUS_NOT_COMPLIED]: total - complied,
         'Total Registros': total,
       };
-    }).filter(Boolean);
-    const subjectSheet = XLSX.utils.json_to_sheet(subjectCompliance);
+    }).filter(item => item !== null);
+    const subjectSheet = XLSX.utils.json_to_sheet(subjectCompliance as any[]);
     subjectSheet['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
 
     // By Teacher
@@ -391,8 +391,9 @@ const App: React.FC = () => {
         [STATUS_NOT_COMPLIED]: total - complied,
         'Total Registros': total,
       };
-    }).filter(Boolean).sort((a, b) => b['Cumplimiento (%)'] - a['Cumplimiento (%)']);
-    const teacherSheet = XLSX.utils.json_to_sheet(teacherCompliance);
+    }).filter(item => item !== null)
+      .sort((a, b) => (b as any)['Cumplimiento (%)'] - (a as any)['Cumplimiento (%)']);
+    const teacherSheet = XLSX.utils.json_to_sheet(teacherCompliance as any[]);
     teacherSheet['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 15 }];
 
     // --- 5. Create Analysis Sheet ---
