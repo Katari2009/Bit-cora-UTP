@@ -15,44 +15,32 @@ const firebaseConfig = {
 export const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.projectId !== "YOUR_PROJECT_ID";
 
 let appInstance: firebase.app.App | null = null;
+let authInstance: firebase.auth.Auth | null = null;
+let firestoreInstance: firebase.firestore.Firestore | null = null;
+let googleAuthProviderInstance: firebase.auth.GoogleAuthProvider | null = null;
 
-const initializeFirebase = (): firebase.app.App | null => {
-  if (appInstance) return appInstance;
-
-  if (isFirebaseConfigured) {
-    try {
-      appInstance = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
-      return appInstance;
-    } catch (error) {
-      console.error("Firebase initialization failed:", error);
-      return null;
-    }
-  } 
-  
-  if (!isFirebaseConfigured) {
+if (isFirebaseConfigured) {
+  try {
+    appInstance = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    authInstance = appInstance.auth();
+    firestoreInstance = appInstance.firestore();
+    googleAuthProviderInstance = new firebase.auth.GoogleAuthProvider();
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+  }
+} else {
+  if (process.env.NODE_ENV !== 'production') {
     console.warn("Firebase is not configured. Please update firebaseConfig.ts with your project's credentials.");
   }
-  return null;
-};
+}
 
 // Getter for the Auth service
-export const getAuth = () => {
-  const app = initializeFirebase();
-  return app ? app.auth() : null;
-};
+export const getAuth = () => authInstance;
 
 // Getter for the Firestore service
-export const getFirestore = () => {
-  const app = initializeFirebase();
-  return app ? app.firestore() : null;
-};
+export const getFirestore = () => firestoreInstance;
 
-// Getter for a new Google Auth Provider instance
-export const getGoogleAuthProvider = () => {
-  if (!isFirebaseConfigured) return null;
-  // Initialize to make sure firebase is available
-  initializeFirebase();
-  return new firebase.auth.GoogleAuthProvider();
-};
+// Getter for the Google Auth Provider instance
+export const getGoogleAuthProvider = () => googleAuthProviderInstance;
 
 export { firebase };
