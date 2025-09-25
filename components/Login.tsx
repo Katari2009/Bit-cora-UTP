@@ -23,7 +23,7 @@ const Login: React.FC<LoginProps> = ({ onSignIn, authError }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="relative flex flex-col items-center justify-center min-h-screen p-4">
       <div className="text-center p-8 bg-slate-800/40 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg max-w-md w-full">
         <div className="flex flex-col items-center justify-center gap-4 mb-6">
           <AppLogoIcon className="w-20 h-20" />
@@ -66,6 +66,9 @@ const Login: React.FC<LoginProps> = ({ onSignIn, authError }) => {
           )}
         </button>
       </div>
+      <footer className="absolute bottom-4 text-center text-slate-500 text-xs w-full">
+        <p>Creado por Christian Núñez V., Asesor Pedagógico, Programa PACE-UDA, 2025.</p>
+      </footer>
     </div>
   );
 };

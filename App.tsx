@@ -559,6 +559,10 @@ Este informe es una herramienta de diagnóstico que busca impulsar la mejora con
           onAdd={handleAddTeacher}
         />
       )}
+
+      <footer className="text-center text-slate-500 text-xs mt-12 py-6 border-t border-slate-800">
+        <p>Creado por Christian Núñez V., Asesor Pedagógico, Programa PACE-UDA, 2025.</p>
+      </footer>
     </div>
   );
 };
