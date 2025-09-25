@@ -21,7 +21,8 @@ export const SUBJECTS: string[] = [
   "NÚCLEOS DE EDUCACIÓN PARVULARIA",
   "TECNOLOGÍA",
   "ARTES VISUALES",
-  "MÚSICA"
+  "MÚSICA",
+  "DANZAS FOLCLÓRICAS"
 ];
 
 export const INITIAL_TEACHERS: Teacher[] = [
