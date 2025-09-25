@@ -534,7 +534,7 @@ Este informe es una herramienta de diagnóstico que busca impulsar la mejora con
   }
 
   return (
-    <div className="min-h-screen text-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen text-slate-100 p-4 sm:p-6 lg:p-8">
       <Header user={user} onSignOut={handleSignOut} />
       <main>
         <Dashboard
@@ -560,7 +560,7 @@ Este informe es una herramienta de diagnóstico que busca impulsar la mejora con
         />
       )}
 
-      <footer className="text-center text-slate-500 text-xs mt-12 py-6 border-t border-slate-800">
+      <footer className="text-center text-slate-400 text-xs mt-16 py-8">
         <p>Creado por Christian Núñez V., Asesor Pedagógico, Programa PACE-UDA, 2025.</p>
       </footer>
     </div>

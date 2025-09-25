@@ -151,13 +151,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         <StatsCard title="Total Docentes" value={teachers.length.toString()} />
       </section>
 
-      <section className="bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-2xl font-semibold text-slate-200">Panel de Docentes</h2>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" />
           <button
             onClick={handleImportClick}
-            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+            className="flex items-center gap-2 bg-sky-500/20 border border-sky-500/30 hover:bg-sky-500/30 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
             title="Importar un respaldo desde un archivo .json. Esto reemplazará todos los datos actuales."
           >
             <ArrowUpTrayIcon />
@@ -165,7 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </button>
           <button
             onClick={onAddTeacher}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
+            className="flex items-center gap-2 bg-indigo-500/20 border border-indigo-500/30 hover:bg-indigo-500/30 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
           >
             <UserPlusIcon />
             Añadir Docente
@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <button
               onClick={onExportJson}
               disabled={teachers.length === 0 && records.length === 0}
-              className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex items-center justify-center gap-2 bg-sky-500/20 border border-sky-500/30 hover:bg-sky-500/30 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500/20 disabled:border-slate-500/30 disabled:cursor-not-allowed"
               title={records.length === 0 ? "No hay datos para exportar" : "Exportar un respaldo completo a un archivo .json"}
             >
               <DocumentArrowDownIcon />
@@ -184,7 +184,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <button
               onClick={onExportXlsx}
               disabled={teachers.length === 0 && records.length === 0}
-              className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex items-center justify-center gap-2 bg-teal-500/20 border border-teal-500/30 hover:bg-teal-500/30 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:bg-slate-500/20 disabled:border-slate-500/30 disabled:cursor-not-allowed"
               title={records.length === 0 ? "No hay datos para exportar" : "Exportar informe completo a XLSX"}
             >
               <TableCellsIcon />
@@ -212,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl">
+          <div className="text-center py-16 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">
             <p className="text-slate-400 text-xl">No hay docentes registrados.</p>
             <p className="text-slate-500 mt-2">Haga clic en "Añadir Docente" o "Importar Respaldo" para comenzar.</p>
           </div>

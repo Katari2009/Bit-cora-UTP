@@ -44,10 +44,10 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
               display: false,
             },
             tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
               titleColor: '#cbd5e1',
               bodyColor: '#cbd5e1',
-              borderColor: '#334155',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
               borderWidth: 1,
               padding: 10,
               callbacks: {
@@ -64,7 +64,7 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
                 callback: (value: string | number) => `${value}%`,
               },
               grid: {
-                color: 'rgba(51, 65, 85, 0.5)',
+                color: 'rgba(255, 255, 255, 0.1)',
               },
               border: {
                 display: false,
@@ -93,7 +93,7 @@ const CourseDistributionChart: React.FC<CourseDistributionChartProps> = ({ data,
   const hasRecords = data.some(d => d > 0);
 
   return (
-    <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700 rounded-xl p-4 sm:p-6 shadow-lg h-80">
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 sm:p-6 shadow-lg h-80">
       <h3 className="text-lg font-semibold text-slate-100 mb-4">Distribución por Curso</h3>
        <div className="relative h-full w-full">
         {hasRecords ? (

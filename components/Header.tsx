@@ -9,7 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, onSignOut }) => {
   return (
-    <header className="flex flex-col sm:flex-row justify-between items-center mb-8 pb-6 border-b border-slate-700/50">
+    <header className="flex flex-col sm:flex-row justify-between items-center mb-8 pb-6 border-b border-white/10">
       <div className="flex items-center gap-4 mb-4 sm:mb-0">
         <AppLogoIcon className="w-12 h-12" />
         <div>
@@ -32,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ user, onSignOut }) => {
         </div>
         <button
           onClick={onSignOut}
-          className="bg-slate-700 hover:bg-red-600/50 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 ml-4"
+          className="bg-white/5 border border-white/10 hover:bg-red-500/20 hover:border-red-500/30 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 ml-4"
         >
           Salir
         </button>

@@ -56,14 +56,14 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
   return (
     <div
       className={`
-        bg-slate-800/40 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg 
-        p-6 flex flex-col justify-between transition-all duration-300 hover:border-sky-500 hover:shadow-sky-500/10
-        ${hasLoggedForSelectedCombination ? 'ring-2 ring-green-500' : ''}
+        bg-white/5 backdrop-blur-xl border rounded-2xl shadow-lg 
+        p-6 flex flex-col justify-between transition-all duration-300 hover:border-sky-400/80 hover:bg-white/10
+        ${hasLoggedForSelectedCombination ? 'ring-2 ring-green-400/50 border-green-400/70' : 'border-white/10'}
       `}
     >
       <div>
         <div className="flex justify-between items-start">
-          <h3 className="text-lg font-bold text-slate-100 mb-4">{teacher.name}</h3>
+          <h3 className="text-lg font-bold text-slate-50 mb-4">{teacher.name}</h3>
           <button
             onClick={() => onDelete(teacher.id)}
             className="text-slate-400 hover:text-red-500 transition-colors"
@@ -84,7 +84,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
               id={`datetime-${teacher.id}`}
               value={selectedDateTime}
               onChange={(e) => setSelectedDateTime(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full bg-black/20 border border-white/20 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             />
           </div>
 
@@ -97,7 +97,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
               id={`course-${teacher.id}`}
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full bg-black/20 border border-white/20 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             >
               {courses.map(course => <option key={course} value={course}>{course}</option>)}
             </select>
@@ -112,7 +112,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
               id={`subject-${teacher.id}`}
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full bg-black/20 border border-white/20 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             >
               {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
             </select>
@@ -122,7 +122,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
       
       <div className="space-y-3">
         {hasLoggedForSelectedCombination && (
-          <div className="text-center text-sm text-green-400 bg-green-900/50 rounded-md py-1">
+          <div className="text-center text-sm text-green-300 bg-green-900/50 rounded-md py-1">
             Registro ya completado
           </div>
         )}
@@ -130,7 +130,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
           <button
             onClick={() => handleLog(ComplianceStatus.COMPLIED)}
             disabled={hasLoggedForSelectedCombination}
-            className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-transform hover:scale-105 disabled:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 w-full bg-green-500/20 border border-green-500/30 hover:bg-green-500/30 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 disabled:bg-green-500/10 disabled:border-green-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <CheckIcon />
             Cumple
@@ -138,7 +138,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
           <button
             onClick={() => handleLog(ComplianceStatus.NOT_COMPLIED)}
             disabled={hasLoggedForSelectedCombination}
-            className="flex items-center justify-center gap-2 w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-transform hover:scale-105 disabled:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 w-full bg-red-500/20 border border-red-500/30 hover:bg-red-500/30 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 disabled:bg-red-500/10 disabled:border-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <XMarkIcon />
             No Cumple
@@ -146,7 +146,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, courses, subjects, c
         </div>
         <button
             onClick={() => onGenerateCsv(teacher.id)}
-            className="flex items-center justify-center gap-2 w-full bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors hover:bg-sky-500"
+            className="flex items-center justify-center gap-2 w-full bg-sky-500/20 border border-sky-500/30 hover:bg-sky-500/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
         >
           <DocumentArrowDownIcon />
           Generar Informe

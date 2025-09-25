@@ -9,12 +9,12 @@ const ComplianceHistory: React.FC<ComplianceHistoryProps> = ({ records }) => {
   const sortedRecords = [...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <section className="bg-slate-900/30 backdrop-blur-lg border border-slate-700 rounded-xl p-4 sm:p-6">
+    <section className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 sm:p-6">
       <h2 className="text-2xl font-semibold text-slate-200 mb-4">Historial de Registros</h2>
       {sortedRecords.length > 0 ? (
-        <div className="overflow-x-auto relative rounded-lg border border-slate-700">
+        <div className="overflow-x-auto relative rounded-lg border border-white/10">
           <table className="w-full text-sm text-left text-slate-300">
-            <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+            <thead className="text-xs text-slate-400 uppercase bg-white/5">
               <tr>
                 <th scope="col" className="px-6 py-3">Docente</th>
                 <th scope="col" className="px-6 py-3">Fecha y Hora</th>
@@ -25,8 +25,8 @@ const ComplianceHistory: React.FC<ComplianceHistoryProps> = ({ records }) => {
             </thead>
             <tbody>
               {sortedRecords.map(record => (
-                <tr key={record.id} className="bg-slate-900/20 border-b border-slate-700 hover:bg-slate-800/40 transition-colors">
-                  <td className="px-6 py-4 font-medium text-white whitespace-nowrap">{record.teacherName}</td>
+                <tr key={record.id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-50 whitespace-nowrap">{record.teacherName}</td>
                   <td className="px-6 py-4">{new Date(record.date).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}</td>
                   <td className="px-6 py-4">{record.course}</td>
                   <td className="px-6 py-4">{record.subject}</td>
