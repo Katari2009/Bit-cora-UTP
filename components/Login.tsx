@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLogoIcon } from './Logo';
 import { GoogleIcon } from './Icons';
 
@@ -7,8 +7,26 @@ interface LoginProps {
   authError: string | null;
 }
 
+const backgroundImages = [
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=3000&auto=format&fit=crop', // Forest path
+  'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=2942&auto=format&fit=crop', // Cat
+  'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2940&auto=format&fit=crop', // Misty forest
+  'https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?q=80&w=2832&auto=format&fit=crop', // Happy dog
+  'https://images.unsplash.com/photo-1594878453488-975239a13f28?q=80&w=2940&auto=format&fit=crop', // Hummingbird
+  'https://images.unsplash.com/photo-1474511320723-9a56873867b5?q=80&w=2940&auto=format&fit=crop', // Fox
+  'https://images.unsplash.com/photo-1560807707-8cc77767d783?q=80&w=2832&auto=format&fit=crop', // Puppy
+  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?q=80&w=2940&auto=format&fit=crop', // Green mountain landscape
+];
+
+
 const Login: React.FC<LoginProps> = ({ onSignIn, authError }) => {
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [backgroundUrl, setBackgroundUrl] = useState('');
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * backgroundImages.length);
+    setBackgroundUrl(backgroundImages[randomIndex]);
+  }, []);
 
   const handleSignInClick = async () => {
     if (isSigningIn) return;
@@ -23,8 +41,16 @@ const Login: React.FC<LoginProps> = ({ onSignIn, authError }) => {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="text-center p-8 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-lg max-w-md w-full">
+    <div className="relative flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+        style={{ backgroundImage: `url(${backgroundUrl})`, opacity: backgroundUrl ? 1 : 0 }}
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 bg-black/50"></div>
+      </div>
+
+      <div className="relative z-10 text-center p-8 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-lg max-w-md w-full">
         <div className="flex flex-col items-center justify-center gap-4 mb-6">
           <AppLogoIcon className="w-20 h-20" />
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">
@@ -66,7 +92,7 @@ const Login: React.FC<LoginProps> = ({ onSignIn, authError }) => {
           )}
         </button>
       </div>
-      <footer className="absolute bottom-4 text-center text-slate-500 text-xs w-full">
+      <footer className="absolute bottom-4 text-center text-slate-300 text-xs w-full z-10" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
         <p>Creado por Christian Núñez V., Asesor Pedagógico, Programa PACE-UDA, 2025.</p>
       </footer>
     </div>
